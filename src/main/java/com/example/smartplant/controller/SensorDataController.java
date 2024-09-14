@@ -1,6 +1,7 @@
 package com.example.smartplant.controller;
 
 import com.example.smartplant.model.SensorData;
+import com.example.smartplant.service.FirebaseMessagingService;
 import com.example.smartplant.service.SensorDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -10,10 +11,13 @@ import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/sensors")
-public class SensorDataController { // REST API를 통해 센서 데이터를 관리하는 컨트롤러
+public class SensorDataController {
 
     @Autowired
     private SensorDataService sensorDataService;
+
+    @Autowired
+    private FirebaseMessagingService firebaseMessagingService;
 
     // 모든 센서 데이터 조회
     @GetMapping
@@ -25,7 +29,14 @@ public class SensorDataController { // REST API를 통해 센서 데이터를 �
     @PostMapping
     public CompletableFuture<Void> addSensorData(@RequestBody SensorData sensorData) {
         sensorData.setTimestamp(System.currentTimeMillis());
-        return sensorDataService.saveSensorData(sensorData);
+        CompletableFuture<Void> result = sensorDataService.saveSensorData(sensorData);
+
+        // 수분 부족 시 Firebase 메시지 전송
+        if (sensorData.getSoilMoisture() < 30) {
+            firebaseMessagingService.sendSoilMoistureAlert(sensorData);
+        }
+
+        return result;
     }
 
     // 센서 데이터 업데이트
@@ -40,5 +51,12 @@ public class SensorDataController { // REST API를 통해 센서 데이터를 �
     @DeleteMapping("/{id}")
     public CompletableFuture<Void> deleteSensorData(@PathVariable String id) {
         return sensorDataService.deleteSensorData(id);
+    }
+
+    // Bluetooth로 센서 데이터 수신
+    @PostMapping("/bluetooth")
+    public CompletableFuture<Void> receiveBluetoothData(@RequestBody SensorData sensorData) {
+        sensorData.setTimestamp(System.currentTimeMillis());
+        return sensorDataService.saveSensorData(sensorData);
     }
 }

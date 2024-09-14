@@ -14,18 +14,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-@Service
+@Service // 데이터의 CRUD 작업 수행가능
 public class SensorDataService { // Firebase와 연동하여 센서 데이터를 처리하는 서비스
 
     private final DatabaseReference databaseReference;
 
-    // FirebaseApp을 생성자 매개변수로 받도록 수정
     public SensorDataService(FirebaseApp firebaseApp) {
         FirebaseDatabase database = FirebaseDatabase.getInstance(firebaseApp);
         databaseReference = database.getReference("sensorData");
     }
 
-    // 데이터 저장
+    // 데이터 저장(
     public CompletableFuture<Void> saveSensorData(SensorData sensorData) {
         String key = databaseReference.push().getKey();
         if (key != null) {
